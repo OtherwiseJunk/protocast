@@ -1,0 +1,36 @@
+name: protocast-pds
+
+services:
+  pds:
+    image: ghcr.io/bluesky-social/pds:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${HOST_BIND_PORT:?set in .env}:3000"
+    volumes:
+      - pds-data:/pds
+    environment:
+      PDS_HOSTNAME: ${PDS_HOSTNAME}
+      PDS_PORT: 3000
+      PDS_JWT_SECRET: ${PDS_JWT_SECRET}
+      PDS_ADMIN_PASSWORD: ${PDS_ADMIN_PASSWORD}
+      PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX: ${PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX}
+
+      # S3 configuration. If you want to use local disk instead of S3, 
+      # remove these and set PDS_BLOBSTORE_DISK_LOCATION=/pds/blocks in the compose file.
+      PDS_BLOBSTORE_S3_BUCKET: ${PDS_BLOBSTORE_S3_BUCKET}
+      PDS_BLOBSTORE_S3_REGION: ${PDS_BLOBSTORE_S3_REGION}
+      PDS_BLOBSTORE_S3_ENDPOINT: ${PDS_BLOBSTORE_S3_ENDPOINT}
+      PDS_BLOBSTORE_S3_FORCE_PATH_STYLE: ${PDS_BLOBSTORE_S3_FORCE_PATH_STYLE:-true}
+      PDS_BLOBSTORE_S3_ACCESS_KEY_ID: ${PDS_BLOBSTORE_S3_ACCESS_KEY_ID}
+      PDS_BLOBSTORE_S3_SECRET_ACCESS_KEY: ${PDS_BLOBSTORE_S3_SECRET_ACCESS_KEY}
+
+      PDS_INVITE_REQUIRED: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/xrpc/_health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  pds-data:

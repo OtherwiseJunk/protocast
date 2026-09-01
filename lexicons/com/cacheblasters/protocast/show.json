@@ -1,0 +1,96 @@
+{
+    "lexicon": 1,
+    "id": "com.cacheblasters.protocast.show",
+    "description": "A podcast.",
+    "defs": {
+        "main": {
+            "type": "record",
+            "description": "A podcast.",
+            "key": "tid",
+            "record": {
+                "type": "object",
+                "required": [
+                    "title",
+                    "createdAt"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 1024,
+                        "maxGraphemes": 256
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 16000,
+                        "maxGraphemes": 4000,
+                        "description": "Plain text. Always safe to render."
+                    },
+                    "descriptionHtml": {
+                        "type": "string",
+                        "maxLength": 32000,
+                        "description": "Sanitised HTML subset. Links preserved."
+                    },
+                    "artwork": {
+                        "type": "ref",
+                        "ref": "com.cacheblasters.protocast.defs#mediaSource"
+                    },
+                    "language": {
+                        "type": "string",
+                        "format": "language",
+                        "description": "BCP 47, normalised casing."
+                    },
+                    "categories": {
+                        "type": "array",
+                        "maxLength": 5,
+                        "items": {
+                            "type": "ref",
+                            "ref": "com.cacheblasters.protocast.defs#category"
+                        }
+                    },
+                    "explicit": {
+                        "type": "boolean",
+                        "description": "Indicates whether the show contains explicit content."
+                    },
+                    "undetermined": {
+                        "type": "array",
+                        "maxLength": 16,
+                        "items": {
+                            "type": "string",
+                            "maxLength": 64
+                        },
+                        "description": "Names of fields whose value is a conservative default rather than a finding; each name must be a field present on this record. An explicit value that cannot be determined is written true - the safe reading - with 'explicit' listed here, so a client can tell the fallback from the publisher's own statement. Cleared on review; absent means omit."
+                    },
+                    "website": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2048
+                    },
+                    "author": {
+                        "type": "string",
+                        "maxLength": 1024,
+                        "maxGraphemes": 256
+                    },
+                    "guid": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "description": "podcast:guid. Immutable once assigned."
+                    },
+                    "sourceFeed": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2048,
+                        "description": "Origin RSS feed, for imported shows only."
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "datetime"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "datetime"
+                    }
+                }
+            }
+        }
+    }
+}

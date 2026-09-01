@@ -1,0 +1,120 @@
+{
+    "lexicon": 1,
+    "id": "com.cacheblasters.protocast.episode",
+    "description": "A podcast episode.",
+    "defs": {
+        "main": {
+            "type": "record",
+            "description": "A podcast episode.",
+            "key": "tid",
+            "record": {
+                "type": "object",
+                "required": [
+                    "show",
+                    "title",
+                    "media",
+                    "createdAt"
+                ],
+                "properties": {
+                    "show": {
+                        "type": "string",
+                        "format": "at-uri",
+                        "description": "AT-URI of the parent show. Not a strongRef: show metadata is edited routinely."
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 1024,
+                        "maxGraphemes": 256
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 16000,
+                        "maxGraphemes": 4000,
+                        "description": "Plain text show notes."
+                    },
+                    "descriptionHtml": {
+                        "type": "string",
+                        "maxLength": 32000,
+                        "description": "Sanitised HTML show notes. Links preserved."
+                    },
+                    "media": {
+                        "type": "ref",
+                        "ref": "com.cacheblasters.protocast.defs#mediaSource"
+                    },
+                    "duration": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Seconds. Absent if the source was unparsable."
+                    },
+                    "artwork": {
+                        "type": "ref",
+                        "ref": "com.cacheblasters.protocast.defs#mediaSource",
+                        "description": "Absent means inherit the show's at render time."
+                    },
+                    "episodeNumber": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "seasonNumber": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "episodeType": {
+                        "type": "string",
+                        "knownValues": [
+                            "full",
+                            "trailer",
+                            "bonus"
+                        ],
+                        "maxLength": 32,
+                        "default": "full"
+                    },
+                    "explicit": {
+                        "type": "boolean",
+                        "description": "Indicates whether the episode contains explicit content."
+                    },
+                    "undetermined": {
+                        "type": "array",
+                        "maxLength": 16,
+                        "items": {
+                            "type": "string",
+                            "maxLength": 64
+                        },
+                        "description": "Names of fields whose value is a conservative default rather than a finding; each name must be a field present on this record. An explicit value that cannot be determined is written true - the safe reading - with 'explicit' listed here, so a client can tell the fallback from the publisher's own statement. Cleared on review; absent means omit."
+                    },
+                    "guid": {
+                        "type": "string",
+                        "maxLength": 512,
+                        "description": "Source RSS guid. Idempotency key on re-import."
+                    },
+                    "transcripts": {
+                        "type": "array",
+                        "maxLength": 8,
+                        "items": {
+                            "type": "ref",
+                            "ref": "com.cacheblasters.protocast.defs#transcript"
+                        }
+                    },
+                    "chapters": {
+                        "type": "ref",
+                        "ref": "com.cacheblasters.protocast.defs#mediaSource",
+                        "description": "External chapters file, per podcast:chapters."
+                    },
+                    "publishedAt": {
+                        "type": "string",
+                        "format": "datetime",
+                        "description": "Absent means draft, or an unparseable source date."
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "datetime"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "datetime"
+                    }
+                }
+            }
+        }
+    }
+}

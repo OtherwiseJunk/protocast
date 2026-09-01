@@ -1,0 +1,117 @@
+{
+    "lexicon": 1,
+    "id": "com.cacheblasters.protocast.defs",
+    "description": "Shared definitions for Protocast records",
+    "defs": {
+        "mediaSource": {
+            "type": "object",
+            "description": "A verifiable reference to a media file hosted externally.",
+            "required": [
+                "uri",
+                "mimeType"
+            ],
+            "properties": {
+                "uri": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "description": "Direct-fetch URL. Stored verbatim, including analytics prefixes."
+                },
+                "mimeType": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "RFC 6838 media type, e.g. audio/mpeg."
+                },
+                "byteLength": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Size in bytes. A publisher claim unless byteLengthVerified is true. This values can either be falsely reported or inaccurate due to dynamic ad insertion. Absent means unknown. Do not divide by or allocate from an unverified value."
+                },
+                "byteLengthVerified": {
+                    "type": "boolean",
+                    "description": "True only if this length was observed via a ranged GET. Absent or false means unverified."
+                },
+                "digest": {
+                    "type": "ref",
+                    "ref": "#digest",
+                    "description": "Content hash. Absent means unverified."
+                },
+                "dynamic": {
+                    "type": "boolean",
+                    "description": "Bytes vary per request (dynamic ad insertion). No stable digest can exist. Absent means unknown."
+                },
+                "service": {
+                    "type": "string",
+                    "format": "did",
+                    "description": "DID of the service vouching for this file."
+                }
+            }
+        },
+        "digest": {
+            "type": "object",
+            "description": "Content-addressed hash of a media file.",
+            "required": [
+                "algo",
+                "hash"
+            ],
+            "properties": {
+                "algo": {
+                    "type": "string",
+                    "knownValues": [
+                        "sha-256"
+                    ],
+                    "maxLength": 32
+                },
+                "hash": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "Lowercase hex digest. Full length, never truncated."
+                }
+            }
+        },
+        "category": {
+            "type": "object",
+            "description": "Apple-taxonomy category: parent plus optional child.",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "maxGraphemes": 64
+                },
+                "sub": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "maxGraphemes": 64
+                }
+            }
+        },
+        "transcript": {
+            "type": "object",
+            "description": "A transcript or caption file for an episode.",
+            "required": [
+                "source"
+            ],
+            "properties": {
+                "source": {
+                    "type": "ref",
+                    "ref": "#mediaSource"
+                },
+                "language": {
+                    "type": "string",
+                    "format": "language"
+                },
+                "kind": {
+                    "type": "string",
+                    "knownValues": [
+                        "transcript",
+                        "captions"
+                    ],
+                    "maxLength": 32
+                }
+            }
+        }
+    }
+}
