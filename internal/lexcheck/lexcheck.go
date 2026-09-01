@@ -21,23 +21,23 @@ func CheckSchemaDir(dir string) error {
 	if len(files) == 0 {
 		return fmt.Errorf("no schema files in %s", dir)
 	}
-	for _, f := range files {
-		raw, err := os.ReadFile(f)
+	for _, file := range files {
+		raw, err := os.ReadFile(file)
 		if err != nil {
 			return err
 		}
-		var sf lexicon.SchemaFile
-		if err := json.Unmarshal(raw, &sf); err != nil {
-			return fmt.Errorf("%s: parse: %w", f, err)
+		var schema lexicon.SchemaFile
+		if err := json.Unmarshal(raw, &schema); err != nil {
+			return fmt.Errorf("%s: parse: %w", file, err)
 		}
-		if err := sf.FinishParse(); err != nil {
-			return fmt.Errorf("%s: FinishParse: %w", f, err)
+		if err := schema.FinishParse(); err != nil {
+			return fmt.Errorf("%s: FinishParse: %w", file, err)
 		}
-		if err := sf.CheckSchema(); err != nil {
-			return fmt.Errorf("%s: CheckSchema: %w", f, err)
+		if err := schema.CheckSchema(); err != nil {
+			return fmt.Errorf("%s: CheckSchema: %w", file, err)
 		}
-		if sf.Lexicon != 1 {
-			return fmt.Errorf("%s: lexicon = %d, want 1", f, sf.Lexicon)
+		if schema.Lexicon != 1 {
+			return fmt.Errorf("%s: lexicon = %d, want 1", file, schema.Lexicon)
 		}
 	}
 	return nil
