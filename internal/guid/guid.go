@@ -46,6 +46,10 @@ func Canonicalise(rawURI string) string {
 		return ""
 	}
 
+	if !isFetchableScheme(getScheme(trimmed)) {
+		return ""
+	}
+
 	// url.Parse reads a host only after "//"
 	toParse := trimmed
 	if !hasScheme(toParse) {
@@ -144,15 +148,25 @@ func canonicalPath(escapedPath string) string {
 }
 
 func hasScheme(rawURI string) bool {
-	if strings.HasPrefix(rawURI, "//") {
-		return true
-	}
+	return strings.HasPrefix(rawURI, "//") || getScheme(rawURI) != ""
+}
+
+func isFetchableScheme(scheme string) bool {
+	return scheme == "" || scheme == "http" || scheme == "https"
+}
+
+func getScheme(rawURI string) string {
 	sep := strings.Index(rawURI, "://")
 	if sep <= 0 {
-		return false
+		return ""
 	}
-	return schemeName.MatchString(rawURI[:sep])
+	scheme := rawURI[:sep]
+	if !schemeName.MatchString(scheme) {
+		return ""
+	}
+	return strings.ToLower(scheme)
 }
+
 func splitAuthority(withoutScheme string) (authority string, remainder string) {
 	if cut := strings.IndexAny(withoutScheme, "/?#"); cut != -1 {
 		return withoutScheme[:cut], withoutScheme[cut:]

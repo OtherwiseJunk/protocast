@@ -26,6 +26,9 @@ func TestCanonicalise(t *testing.T) {
 		{"example..com/rss", ""},
 		{".example.com/rss", ""},
 		{"https://[2001:db8::1]/rss", "[2001:db8::1]/rss"},
+		{"ftp://example.com/rss", ""},
+		{"file://example.com/rss", ""},
+		{"gopher://example.com/feed", ""},
 	}
 
 	for _, test := range tests {
