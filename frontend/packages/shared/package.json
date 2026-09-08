@@ -1,0 +1,17 @@
+{
+  "name": "@protocast/shared",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "dependencies": {
+    "expo-secure-store": "~15.0.7",
+    "expo-web-browser": "~15.0.9",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  }
+}
