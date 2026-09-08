@@ -1,0 +1,9 @@
+# The backend image builds from the repo root so lexicons/ is reachable, but it
+# needs only backend/ and lexicons/. Allowlist rather than chase new top-level
+# directories as the monorepo grows.
+*
+
+!backend/
+!lexicons/
+
+**/__debug_bin*

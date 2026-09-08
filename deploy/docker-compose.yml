@@ -32,5 +32,15 @@ services:
       retries: 3
       start_period: 30s
 
+  backend:
+    profiles: ["backend"]
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: "no"
+    depends_on:
+      pds:
+        condition: service_healthy
+
 volumes:
   pds-data:
