@@ -13,7 +13,10 @@ func Locate(root *Node) (*Node, []*Node, error) {
 		return nil, nil, fmt.Errorf("feedxml.Locate: empty document")
 	}
 
-	channel := root.Child(AnyNS, channelStr)
+	channel := root.Child(NSRSS, channelStr)
+	if channel == nil {
+		channel = root.Child(AnyNS, channelStr)
+	}
 	if channel == nil && root.Local == channelStr {
 		channel = root
 	}
@@ -25,9 +28,12 @@ func Locate(root *Node) (*Node, []*Node, error) {
 				"the feed URL you submitted", root.Local)
 	}
 
-	items := channel.ChildrenNamed(AnyNS, "item")
+	items := channel.ChildrenNamed(NSRSS, itemStr)
 	if len(items) == 0 {
-		items = root.ChildrenNamed(AnyNS, "item")
+		items = channel.ChildrenNamed(AnyNS, itemStr)
+	}
+	if len(items) == 0 {
+		items = root.ChildrenNamed(AnyNS, itemStr)
 	}
 
 	return channel, items, nil

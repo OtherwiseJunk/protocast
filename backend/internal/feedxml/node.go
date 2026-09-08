@@ -15,15 +15,27 @@ const (
 	AnyNS     = "*"
 )
 
+// Namespace URIs in nsKey form: lowercased, scheme dropped, no trailing slash.
 var nsAliases = map[string]string{
-	"http://www.itunes.com/dtds/podcast-1.0.dtd": NSItunes,
-	"https://podcastindex.org/namespace/1.0":     NSPodcast,
-	"http://podcastindex.org/namespace/1.0":      NSPodcast,
-	"https://podcastindex.org/namespace/1.0/":    NSPodcast,
-	"http://www.w3.org/2005/Atom":                NSAtom,
-	"http://purl.org/rss/1.0/modules/content/":   NSContent,
-	"http://search.yahoo.com/mrss/":              NSMedia,
-	"http://purl.org/dc/elements/1.1/":           NSDC,
+	"www.itunes.com/dtds/podcast-1.0.dtd": NSItunes,
+	"podcastindex.org/namespace/1.0":      NSPodcast,
+	"www.w3.org/2005/atom":                NSAtom,
+	"purl.org/rss/1.0/modules/content":    NSContent,
+	"search.yahoo.com/mrss":               NSMedia,
+	"purl.org/dc/elements/1.1":            NSDC,
+}
+
+// nsKey reduces a namespace URI to the form every real spelling of it shares:
+// lowercased, scheme dropped, trailing slash dropped. Feeds ship the same
+// vocabulary over http and https and both must land on one token.
+func nsKey(uri string) string {
+	key := strings.ToLower(strings.TrimSpace(uri))
+	if rest, found := strings.CutPrefix(key, "https://"); found {
+		key = rest
+	} else if rest, found := strings.CutPrefix(key, "http://"); found {
+		key = rest
+	}
+	return strings.TrimSuffix(key, "/")
 }
 
 // CanonNS maps a namespace URI to a short stable token. Unknown namespaces pass
@@ -32,14 +44,8 @@ func CanonNS(uri string) string {
 	if uri == "" {
 		return NSRSS
 	}
-	if str, ok := nsAliases[uri]; ok {
-		return str
-	}
-	norm := strings.TrimSuffix(uri, "/")
-	for key, value := range nsAliases {
-		if strings.EqualFold(strings.TrimSuffix(key, "/"), norm) {
-			return value
-		}
+	if token, ok := nsAliases[nsKey(uri)]; ok {
+		return token
 	}
 	return uri
 }
