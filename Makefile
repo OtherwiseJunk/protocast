@@ -1,8 +1,8 @@
 # Root orchestrator for the protocast monorepo.
 
-.PHONY: check test dev lex-check backend-check backend-test admin-check protocast-check
+.PHONY: check test dev lex-check backend-check backend-test frontend-check
 
-check: lex-check backend-check admin-check protocast-check
+check: lex-check backend-check frontend-check
 
 test: backend-test
 
@@ -15,13 +15,8 @@ backend-check:
 backend-test:
 	$(MAKE) -C backend test
 
-# TODO: wire up once admin/ exists
-admin-check:
-	@test -d admin && $(MAKE) -C admin check || echo "skip: admin/ not scaffolded yet"
-
-# TODO: wire up once protocast/ exists
-protocast-check:
-	@test -d protocast && $(MAKE) -C protocast check || echo "skip: protocast/ not scaffolded yet"
+frontend-check:
+	cd frontend && pnpm turbo run check
 
 # Brings up backend + PDS stack for local dev.
 dev:
