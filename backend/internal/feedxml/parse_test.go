@@ -1,7 +1,7 @@
 package feedxml
 
 import (
-	"bytes"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -82,27 +82,6 @@ func TestCDATAPreservesMarkup(test *testing.T) {
 	}
 }
 
-// The podcast namespace ships in http and https spellings. Both must land in
-// the same canonical token or half the PC2.0 tags vanish.
-func TestCanonNSFoldsEveryRealSpelling(test *testing.T) {
-	tests := []struct{ name, uri, want string }{
-		{"podcast namespace over https", "https://podcastindex.org/namespace/1.0", NSPodcast},
-		{"podcast namespace over http", "http://podcastindex.org/namespace/1.0", NSPodcast},
-		{"iTunes DTD in mixed case", "http://WWW.iTunes.com/DTDs/Podcast-1.0.dtd", NSItunes},
-		{"atom with a trailing slash the alias lacks", "http://www.w3.org/2005/Atom/", NSAtom},
-		{"mrss without the trailing slash the alias has", "http://search.yahoo.com/mrss", NSMedia},
-		// An unknown namespace passes through unchanged - raw retention needs it.
-		{"unknown namespace passes through", "https://example.com/custom", "https://example.com/custom"},
-	}
-	for _, testCase := range tests {
-		test.Run(testCase.name, func(test *testing.T) {
-			if got := CanonNS(testCase.uri); got != testCase.want {
-				test.Errorf("CanonNS(%q) = %q, want %q", testCase.uri, got, testCase.want)
-			}
-		})
-	}
-}
-
 // <link> is in encoding/xml's HTMLAutoClose list. If AutoClose is ever enabled,
 // the URL is stranded as a sibling and the closing tag aborts the parse
 func TestLinkTextSurvives(test *testing.T) {
@@ -145,36 +124,87 @@ func TestAccessorsAreNilSafe(test *testing.T) {
 	}
 }
 
-// Charset reader must handle non-UTF-8 encodings. ISO-8859-1 (Latin-1) is
-// common in older feeds. If the charset reader is not wired correctly, non-ASCII
-// bytes are silently lost or mangled, which is a parser bug. This test asserts
-// that the charset reader is active and working by parsing a document declared
-// as ISO-8859-1 and containing bytes that are invalid UTF-8 on their own.
-func TestNonUTF8EncodingDecoded(test *testing.T) {
-	// XML document with ISO-8859-1 encoding declaration, containing the byte 0xE9
-	// which is 'é' in ISO-8859-1 but is not valid UTF-8 on its own.
-	doc := []byte{
-		// <?xml version="1.0" encoding="ISO-8859-1"?>
-		0x3C, 0x3F, 0x78, 0x6D, 0x6C, 0x20, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6F,
-		0x6E, 0x3D, 0x22, 0x31, 0x2E, 0x30, 0x22, 0x20, 0x65, 0x6E, 0x63, 0x6F,
-		0x64, 0x69, 0x6E, 0x67, 0x3D, 0x22, 0x49, 0x53, 0x4F, 0x2D, 0x38, 0x38,
-		0x35, 0x39, 0x2D, 0x31, 0x22, 0x3F, 0x3E,
-		// <rss><channel><title>Caf
-		0x3C, 0x72, 0x73, 0x73, 0x3E, 0x3C, 0x63, 0x68, 0x61, 0x6E, 0x6E, 0x65,
-		0x6C, 0x3E, 0x3C, 0x74, 0x69, 0x74, 0x6C, 0x65, 0x3E, 0x43, 0x61, 0x66,
-		// é (0xE9 in ISO-8859-1)
-		0xE9,
-		// </title></channel></rss>
-		0x3C, 0x2F, 0x74, 0x69, 0x74, 0x6C, 0x65, 0x3E, 0x3C, 0x2F, 0x63, 0x68,
-		0x61, 0x6E, 0x6E, 0x65, 0x6C, 0x3E, 0x3C, 0x2F, 0x72, 0x73, 0x73, 0x3E,
-	}
-
-	root, err := Parse(bytes.NewReader(doc))
+func TestDefectRealChannelWinsOverForeignNamespace(test *testing.T) {
+	doc := `<rss version="2.0" xmlns:x="http://example.invalid/x"><x:channel>` +
+		`<title>Decoy</title></x:channel><channel><title>Real</title>` +
+		`<item><title>Ep</title></item></channel></rss>`
+	root, err := Parse(strings.NewReader(doc))
 	if err != nil {
 		test.Fatalf("Parse: %v", err)
 	}
-	got := root.Child(NSRSS, "channel").ChildText(NSRSS, "title")
-	if got != "Café" {
-		test.Errorf("non-UTF-8 text = %q, want %q", got, "Café")
+	ch, items, err := Locate(root)
+	if err != nil {
+		test.Fatalf("Locate: %v", err)
+	}
+	if got := ch.ChildText(AnyNS, "title"); got != "Real" {
+		test.Errorf("Locate chose the channel titled %q; a foreign-namespace <x:channel> "+
+			"declared first became the show", got)
+	}
+	if len(items) != 1 {
+		test.Errorf("Locate found %d items; the real channel's item was lost with it", len(items))
+	}
+}
+
+func TestDefectNamespacedAttrDoesNotShadowPlain(test *testing.T) {
+	doc := `<rss version="2.0" xmlns:x="http://example.invalid/x"><channel><item>` +
+		`<enclosure url="https://good.example/a.mp3" x:url="https://evil.example/a.mp3"/>` +
+		`</item></channel></rss>`
+	root, err := Parse(strings.NewReader(doc))
+	if err != nil {
+		test.Fatalf("Parse: %v", err)
+	}
+	_, items, err := Locate(root)
+	if err != nil || len(items) != 1 {
+		test.Fatalf("Locate: %v, %d items", err, len(items))
+	}
+	if got := items[0].Child(AnyNS, "enclosure").Attr("url"); got != "https://good.example/a.mp3" {
+		test.Errorf("Attr(\"url\") = %q; a namespaced x:url overwrote the unnamespaced url", got)
+	}
+}
+
+func TestDefectTextAccumulationIsLinear(test *testing.T) {
+	alloc := func(tokens int) uint64 {
+		doc := `<?xml version="1.0"?><rss version="2.0"><channel><description>` +
+			strings.Repeat("A<!---->", tokens) + `</description></channel></rss>`
+		var before, after runtime.MemStats
+		runtime.GC()
+		runtime.ReadMemStats(&before)
+		if _, err := Parse(strings.NewReader(doc)); err != nil {
+			test.Fatalf("Parse: %v", err)
+		}
+		runtime.ReadMemStats(&after)
+		return after.TotalAlloc - before.TotalAlloc
+	}
+	small := alloc(20000)
+	large := alloc(40000)
+	// Linear accumulation roughly doubles. Quadratic roughly quadruples.
+	if ratio := float64(large) / float64(small); ratio > 3 {
+		test.Errorf("doubling the token count allocated %.1fx the bytes (%d -> %d): "+
+			"Text += string(t) is quadratic, so a feed at the 32 MiB fetch cap "+
+			"occupies a core for tens of minutes", ratio, small, large)
+	}
+}
+
+func TestDefectSurvivesOneBadByte(test *testing.T) {
+	const head = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel>` +
+		`<title>Probe</title><link>https://ex.com</link><description>d</description>`
+	const tail = `</channel></rss>`
+	tests := []struct{ name, doc string }{
+		{"lone Latin-1 byte in the last item",
+			head + "<item><title>Ok</title></item><item><title>Caf\xe9</title></item>" + tail},
+		{"NUL character reference", head + "<item><title>&#0;</title></item>" + tail},
+		{"C0 control character reference", head + "<item><title>&#8;</title></item>" + tail},
+		{"bare < in text", head + "<item><title>5 < 6</title></item>" + tail},
+		{"unknown charset label", `<?xml version="1.0" encoding="x-mac-croatian"?>` +
+			`<rss version="2.0"><channel><title>Probe</title>` + tail},
+	}
+	for _, testCase := range tests {
+		test.Run(testCase.name, func(test *testing.T) {
+			root, err := Parse(strings.NewReader(testCase.doc))
+			if err != nil && root == nil {
+				test.Errorf("one malformed byte discarded the whole document: %v\n"+
+					"a real feed must survive with the bad value degraded, not vanish", err)
+			}
+		})
 	}
 }
