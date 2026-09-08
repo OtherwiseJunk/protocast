@@ -3,5 +3,6 @@
   "private": true,
   "devDependencies": {
     "turbo": "^2.5.0"
-  }
+  },
+  "packageManager": "pnpm@11.24.0"
 }
