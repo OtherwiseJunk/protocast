@@ -1,3 +1,5 @@
+.PHONY: test fmt-check check install
+
 test:
 	go test ./... -v
 
@@ -13,3 +15,6 @@ check: fmt-check
 	go vet ./...
 	go run ./cmd/lexcheck
 	go test ./... -v
+
+install:
+	go mod download
