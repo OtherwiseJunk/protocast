@@ -11,13 +11,21 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
+    "oxlint-config-universe": "^0.2.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt --check .",
+    "check": "pnpm run lint && pnpm run fmt:check"
   },
   "private": true
 }
